@@ -24,6 +24,10 @@ Tools which are often used .
 * Free software: Apache Software License 2.0
 * Documentation: https://wind-tools.readthedocs.io.
 
+Installation
+------------
+After cloning, perform editable install from directory above install:
+``pip install -e wind_tools``
 
 Features
 --------

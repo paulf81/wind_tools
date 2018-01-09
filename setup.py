@@ -31,7 +31,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="Paul Fleming",
     author_email='paul.fleming@nrel.gov',
-    url='https://github.com/pfleming/wind_tools',
+    url='https://github.nrel.gov/pfleming/wind_tools',
     packages=find_packages(include=['wind_tools']),
     entry_points={
         'console_scripts': [
