@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time
+# import time
 
 class Timer(object):
     def __init__(self, name=None):
@@ -11,8 +11,8 @@ class Timer(object):
 
     def __exit__(self, type, value, traceback):
         if self.name:
-            print '[%s]' % self.name,
-        print 'Elapsed: %s' % (time.time() - self.tstart)
+            print('[%s]' % self.name,)
+        print('Elapsed: %s' % (time.time() - self.tstart))
 
 
 
@@ -68,7 +68,7 @@ def readVTK(filename, createInterpolant=False, conversionMatrix=[], conversionVe
             #     pointsXYZ_tri = pointsXYZ.take(polygons.flatten(1), axis=0)
             #     cellCenters = np.array([pointsXYZ_tri[:,0].reshape([3,-1]).mean(axis=0),pointsXYZ_tri[:,1].reshape([3,-1]).mean(axis=0),pointsXYZ_tri[:,2].reshape([3,-1]).mean(axis=0)]).transpose()
             # except:
-            print 'not triangular vtk, using lists'
+            print('not triangular vtk, using lists')
             # Instead use
             polygons = [[int(xx) for xx in x.split()[1:]] for x in lines[lineCounter+1:lineCounter+1+nPolygons]]
             
@@ -108,7 +108,7 @@ def readVTK(filename, createInterpolant=False, conversionMatrix=[], conversionVe
                         cd = np.dot(cd, projectionVector)
                     cellData.append(cd)
                 else:
-                    print 'readVTK FORMAT ERROR'
+                    print('readVTK FORMAT ERROR')
 
         lineCounter += 1
 
@@ -154,7 +154,7 @@ def averageVTKs(basePath, timeFolders, filename=None, vtkfile='U_slice_1.vtk', c
 
     nSamples = len(timeFolders)
 
-    print 'reading and averaging hub-height flow field'
+    print('reading and averaging hub-height flow field')
     for dataI in range(nSamples):
 
         # show progress
@@ -207,23 +207,23 @@ if __name__ == '__main__':
     # EXAMPLE
     dataType, cellCenters, cellData = readVTK(filename, False)  # replace filename with your own vtk file
     
-    print "type of data: %s" % dataType
-    print "cell centers:"
-    print cellCenters[0]
-    print cellCenters[1]
-    print cellCenters[2]
-    print "..."
-    print cellCenters[-3]
-    print cellCenters[-2]
-    print cellCenters[-1]
-    print "cell data:"
-    print cellData[0]
-    print cellData[1]
-    print cellData[2]
-    print "..."
-    print cellData[-3]
-    print cellData[-2]
-    print cellData[-1]
+    print("type of data: %s" % dataType)
+    print("cell centers:")
+    print(cellCenters[0])
+    print(cellCenters[1])
+    print(cellCenters[2])
+    print("...")
+    print(cellCenters[-3])
+    print(cellCenters[-2])
+    print(cellCenters[-1])
+    print("cell data:")
+    print(cellData[0])
+    print(cellData[1])
+    print(cellData[2])
+    print("...")
+    print(cellData[-3])
+    print(cellData[-2])
+    print(cellData[-1])
 
     # # Standard case
     # dataType, interpolant = readVTK(filename, True, np.array([[1.0, 0, 0], [0, 1.0, 0]]), np.array([[-1500.0, -1500.0]]))
