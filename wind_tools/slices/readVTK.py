@@ -163,8 +163,8 @@ def averageVTKs(basePath, timeFolders, filename=None, vtkfile='U_slice_1.vtk', c
             stdout.write("\b"*16)
         stdout.write("progress: %3s %%" % int(progress))
 
-	if not filename:
-	    filename = path.join(basePath,timeFolders[dataI],vtkfile)
+    if not filename:
+        filename = path.join(basePath,timeFolders[dataI],vtkfile)
         dataType,cellCenters,cellData,pointsXYZ = readVTK(filename, False, np.array([[1.0, 0, 0], [0, 1.0, 0]]), np.array([[0.0, 0.0]]))
 
         if dataI == 0:
