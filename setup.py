@@ -27,11 +27,11 @@ test_requirements = [
 setup(
     name='wind_tools',
     version='0.1.0',
-    description="Tools which are often used .",
+    description="Tools for wind.",
     long_description=readme + '\n\n' + history,
     author="Paul Fleming",
     author_email='paul.fleming@nrel.gov',
-    url='https://github.nrel.gov/pfleming/wind_tools',
+    url='https://github.com/paulf81/wind_tools',
     packages=find_packages(include=['wind_tools']),
     entry_points={
         'console_scripts': [
