@@ -19,7 +19,7 @@ startTime = 600 #Seconds into simulation to start the average
 stopTime = 1000
 delta = 10 # Take every x seconds
 
-rootDir = os.path.join('/','scratch','pfleming','runs','Gamesa','VRAC')
+rootDir = os.path.join('somedir')
 sliceFolder = 'sliceDataInstant'
 outputFolder = 'slicePost'
 
