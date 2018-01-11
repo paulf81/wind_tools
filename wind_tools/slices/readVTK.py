@@ -182,6 +182,7 @@ def averageVTKs(basePath, timeFolders, filename=None, vtkfile='U_slice_1.vtk', c
             return sampledData
         return dataType, copy(interpolant), pointsXYZ
 
+# Important note, example below probably doesn't work
 
 if __name__ == '__main__':
 
