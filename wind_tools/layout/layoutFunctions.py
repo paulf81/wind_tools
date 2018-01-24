@@ -74,6 +74,7 @@ def visualize_layout(turbineLoc,D,ax=None,show_wake_lines=False,limit_dist=None)
         
     # Plot turbines
     for t1 in turbines:
+        # print(t1)
         #ax.annotate(t1,(turbineLoc03.loc[t1].x,turbineLoc03.loc[t1].y),xycoords='data')
         ax.plot([turbineLoc.loc[t1].x,turbineLoc.loc[t1].x],[turbineLoc.loc[t1].y-0.5*D/2.,turbineLoc.loc[t1].y +0.5*D/2.],color='k')
         ax.text(turbineLoc.loc[t1].x+D/2,turbineLoc.loc[t1].y,t1,bbox=dict(boxstyle="round",ec='red',fc='white'))
