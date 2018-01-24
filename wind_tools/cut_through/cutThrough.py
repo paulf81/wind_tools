@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from scipy.interpolate import griddata
 import seaborn as sns
 import copy
@@ -50,7 +51,7 @@ class cutThrough:
     def remesh(self):
         self.uMesh = griddata(np.column_stack([self.y, self.z]), self.u,(self.yMesh.flatten(), self.zMesh.flatten()), method='cubic')
         
-    def visualize(self,ax=None,minSpeed=None,maxSpeed=None):
+    def visualize(self,ax=None,minSpeed=None,maxSpeed=None,do_not_invert=False):
         """ Visualize the scan
         
         Args:
@@ -71,7 +72,10 @@ class cutThrough:
         Zm = np.ma.masked_where(np.isnan(uMesh),uMesh)
         
         # Plot the cut-through
-        im = ax.pcolormesh((self.yLin-self.yCent)  * -1./self.D, (self.zLin-self.zCent) /self.D, Zm, cmap='coolwarm',vmin=minSpeed,vmax=maxSpeed)
+        if do_not_invert:
+            im = ax.pcolormesh((self.yLin-self.yCent)  * 1./self.D, (self.zLin-self.zCent) /self.D, Zm, cmap='coolwarm',vmin=minSpeed,vmax=maxSpeed)
+        else:
+            im = ax.pcolormesh((self.yLin-self.yCent)  * -1./self.D, (self.zLin-self.zCent) /self.D, Zm, cmap='coolwarm',vmin=minSpeed,vmax=maxSpeed)
         
         # Invert the x-axis
         # ax.invert_xaxis()
@@ -137,7 +141,7 @@ class cutThrough:
             ax.plot(self.zLin-self.zCent,u1,alpha=0.1,color=color)
         ax.set_ylim([minSpeed,maxSpeed])
 
-    def lineContour(self,ax=None,levels=None,colors=None):
+    def lineContour(self,ax=None,levels=None,colors=None,**kwargs):
         """ Visualize the scan as a simple contour
         
         Args:
@@ -150,18 +154,18 @@ class cutThrough:
         # Reshape UMesh internally
         uMesh = self.uMesh.reshape(self.res,self.res)
         Zm = np.ma.masked_where(np.isnan(uMesh),uMesh)
-        
+        matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
         # Plot the cut-through
         if levels:
             if colors:
-                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm,levels=levels,colors=colors)
+                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm,levels=levels,colors=colors,**kwargs)
             else:
-                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm,levels=levels)
+                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm,levels=levels,**kwargs)
         else:
             if colors:
-                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm,colors=colors)
+                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm,colors=colors,**kwargs)
             else:
-                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm)
+                ax.contour((self.yLin-self.yCent) * -1./self.D, (self.zLin-self.zCent)/self.D, Zm,**kwargs)
         
         # Invert the x-axis
         # ax.invert_xaxis()
@@ -239,44 +243,44 @@ def sowfaCutFrame(df,xVal,D,yCent=0.,zCent=0.,resolution=100,plot=False):
 
     return ct
 
-# # FLORIS imports
-# import sys
-# sys.path.append('FLORISSE/')
-# import main
-# import utilities
-# import wakeModels
-# import OptModules
-# import NREL5MW
+# FLORIS imports
+import sys
+sys.path.append('Y:/Wind/Public/Projects/Projects T-Z/WindPlantControls/projectX/sowfaAnalysis_revised_paper/FLORISSE/')
+import main
+import utilities
+import wakeModels
+import OptModules
+import NREL5MW
 
 
-# def florisCutFrame(inputData,xVal,D,yCent=0.,zCent=0.,resolution=100,plot=False):
+def florisCutFrame(inputData,xVal,D,yCent=0.,zCent=0.,resolution=100,plot=False):
     
-#     #print(inputData['yLen'][1],resolution)
-#     lowRes = 20.
-#     yLin = np.linspace(inputData['yLen'][0],inputData['yLen'][1],lowRes)
-#     zLin = np.linspace(inputData['zLen'][0]+1.,inputData['zLen'][1],lowRes)
+    #print(inputData['yLen'][1],resolution)
+    lowRes = 20.
+    yLin = np.linspace(inputData['yLen'][0],inputData['yLen'][1],lowRes)
+    zLin = np.linspace(inputData['zLen'][0]+1.,inputData['zLen'][1],lowRes)
     
-#     y, z = np.meshgrid(yLin,zLin)
+    y, z = np.meshgrid(yLin,zLin)
     
-#     yPts = y.flatten()
-#     zPts = z.flatten()
-#     xPts = np.ones_like(yPts) * xVal
+    yPts = y.flatten()
+    zPts = z.flatten()
+    xPts = np.ones_like(yPts) * xVal
     
-#     # Get points
-#     inputData['xPts'] = xPts
-#     inputData['yPts'] = yPts
-#     inputData['zPts'] = zPts
-#     inputData['points'] = True    # must set this to true if you want points 
-#     inputData['visualizeHorizontal'] = False
+    # Get points
+    inputData['xPts'] = xPts
+    inputData['yPts'] = yPts
+    inputData['zPts'] = zPts
+    inputData['points'] = True    # must set this to true if you want points 
+    inputData['visualizeHorizontal'] = False
     
-#     # Get the last turbine out of the way
-#     baseX = inputData['turbineX'][0]
-#     baseY = inputData['turbineY'][0]
-#     inputData['turbineX'][-1] = inputData['xLen'][1] - 1.
-#     inputData['turbineY'][-1] = baseY
-#     outputData = main.windPlant(inputData)
+    # Get the last turbine out of the way
+    baseX = inputData['turbineX'][0]
+    baseY = inputData['turbineY'][0]
+    inputData['turbineX'][-1] = inputData['xLen'][1] - 1.
+    inputData['turbineY'][-1] = baseY
+    outputData = main.windPlant(inputData)
     
-#     # Build a scan frame
-#     ct = cutThrough(yPts,zPts,outputData['Upts'],D,yCent=yCent,zCent=zCent,resolution=resolution)
+    # Build a scan frame
+    ct = cutThrough(yPts,zPts,outputData['Upts'],D,yCent=yCent,zCent=zCent,resolution=resolution)
     
-#     return ct
+    return ct

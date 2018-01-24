@@ -105,10 +105,13 @@ class cutThroughYZ:
         # Zm = np.ma.masked_where(np.isnan(uMesh),uMesh)
 
         # plot the stream plot
-        ax.quiver( (self.yMesh[::downSamp,::downSamp]-self.yCent) * -1./self.D,
+        QV1 = ax.quiver( (self.yMesh[::downSamp,::downSamp]-self.yCent) * -1./self.D,
                    (self.zMesh[::downSamp,::downSamp]-self.zCent)/self.D,
                    vMesh[::downSamp,::downSamp] * -1.,
                    wMesh[::downSamp,::downSamp],**kw)
+
+        ax.quiverkey(QV1, -1.6, 1.2, 1, '1 m/s', coordinates='data')
+        # ax.quiverkey(QV1, -3, 1.2, 1, '1 m/s', coordinates='data')
 
         #print(minSpeed,maxSpeed)
         
