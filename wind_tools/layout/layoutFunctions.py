@@ -70,7 +70,7 @@ def visualize_layout(turbineLoc,D,ax=None,show_wake_lines=False,limit_dist=None)
 
             l, = ax.plot(x,y)
             linetext = '%.2f m --- %.2f D --- %.2f Deg --- %.2f Deg' % (dist.loc[t1,t2],dist.loc[t1,t2]/D,angle.loc[t1,t2],angle.loc[t2,t1])
-            label_line(l, linetext, near_i=1, near_x=None, near_y=None,rotation_offset=180)
+            label_line(l, linetext, ax, near_i=1, near_x=None, near_y=None,rotation_offset=180)
         
     # Plot turbines
     for t1 in turbines:
@@ -125,7 +125,7 @@ def wakeAngle(df, turbList):
     
     return wakeAngle
 
-def label_line(line, label_text, near_i=None, near_x=None, near_y=None, rotation_offset=0, offset=(0,0)):
+def label_line(line, label_text, ax, near_i=None, near_x=None, near_y=None, rotation_offset=0, offset=(0,0)):
     """call 
         l, = plt.loglog(x, y)
         label_line(l, "text", near_x=0.32)
@@ -142,7 +142,7 @@ def label_line(line, label_text, near_i=None, near_x=None, near_y=None, rotation
 
     x = line.get_xdata()
     y = line.get_ydata()
-    ax = line.get_axes()
+    # ax = line.get_axes()
     if ax.get_xscale() == 'log':
         sx = np.log10(x)    # screen space
     else:
