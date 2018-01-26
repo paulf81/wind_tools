@@ -169,3 +169,67 @@ def label_line(line, label_text, ax, near_i=None, near_x=None, near_y=None, rota
     else:
         raise ValueError("Need one of near_i, near_x, near_y")
 
+def make_turbine_array(x,y,filename='turbineArrayProperties',turbine='NREL5MWRef'):
+    """
+    Function to output a turbine array file given x and y locations
+
+    x,y: arrays of turbine location
+    filename: name of output file
+    turbine: name of turbine to use within file
+    """
+
+    # Open the file for writing
+    with open(filename,'w') as f:
+
+        # Write out the headerlines
+        f.write('/*--------------------------------*- C++ -*----------------------------------*\\\n')
+        f.write('| =========                 |                                                 |\n')
+        f.write('| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |\n')
+        f.write('|  \\    /   O peration     | Version:  1.6                                   |\n')
+        f.write('|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |\n')
+        f.write('|    \\/     M anipulation  |                                                 |\n')
+        f.write('\\*---------------------------------------------------------------------------*/\n')
+        f.write('FoamFile\n')
+        f.write('{\n')
+        f.write('    version     2.0;\n')
+        f.write('    format      ascii;\n')
+        f.write('    class       dictionary;\n')
+        f.write('    object      turbineProperties;\n')
+        f.write('}\n')
+        f.write('// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //\n')
+        f.write('\n')
+        f.write('globalProperties\n')
+        f.write('{\n')
+        f.write('    outputControl       "timeStep";\n')
+        f.write('    outputInterval       1;\n')
+        f.write('}\n')
+
+        for idx, (x_val, y_val) in enumerate(zip(x,y)):
+            f.write('\n')
+            f.write('turbine%d\n' % idx)
+            f.write('{\n')
+            f.write('    turbineType         "%s";\n' % turbine)
+            f.write('    baseLocation        (%d %d 0.0);\n' % (x_val,y_val))
+            f.write('    nRadial              64;\n')
+            f.write('    azimuthMaxDis        2.0;\n')
+            f.write('    nAvgSector           1;\n')
+            f.write('    pointDistType       "uniform";\n')
+            f.write('    pointInterpType     "linear";\n')
+            f.write('    bladeUpdateType     "oldPosition";\n')
+            f.write('    epsilon              20.0;\n')
+            f.write('    forceScalar          1.0;\n')
+            f.write('    inflowVelocityScalar 0.94;\n')
+            f.write('    tipRootLossCorrType "Glauert";\n')
+            f.write('    rotationDir         "cw";\n')
+            f.write('    Azimuth              0.0;\n')
+            f.write('    RotSpeed             10.0;\n')
+            f.write('    TorqueGen            20000.0;\n')
+            f.write('    Pitch                0.0;\n')
+            f.write('    NacYaw               270.0;\n')
+            f.write('    fluidDensity         1.225;\n')
+            f.write('}\n')
+
+
+
+
+
