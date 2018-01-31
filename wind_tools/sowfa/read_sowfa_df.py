@@ -232,7 +232,7 @@ def read_sowfa_df(folderName, channels=[]):
     input: foldername, where to find the outputs of AL
             channels, not really used for now, but could be a list of desired channels to only read
     output:
-		df: a pandas table from SCO
+		df: a pandas table
 
 
     Paul Fleming, 2018 based on 
@@ -255,7 +255,11 @@ def read_sowfa_df(folderName, channels=[]):
 
     # Get the number of channels
     num_channels = len(outputNames)
-    print(num_channels)
+    # print(num_channels)
+
+    if num_channels == 0:
+        raise ValueError('Is %s a data folder?' % folderName)
+
 
 
 
@@ -285,6 +289,46 @@ def read_sowfa_df(folderName, channels=[]):
 
     return df.reset_index()
 
+def load_cases(case_list,case_folder='.',case_names=[],sub_folder='turbineOutput/20000'):
+    """Load a list of cases and return a single data frame
+
+    input: case_list: list of cases
+            case_folder: if given, the root folder of all cases
+            case_names: if given, cleaner names of each case, otherwise just use case_list
+            sub_folder: path to folder below the case folder
+    output:
+		df: a pandas table with a new case_name column
+
+
+    Paul Fleming, 2018 """
+
+    # If no case_names, use case_list
+    if len(case_names)==0:
+        case_names = case_list
+
+    # Make sure case_names is right length
+    if (len(case_names) != len(case_list)):
+        print('Name and case list must be same length')
+        return 0
+
+    # Loop through the cases and build up return frame
+    df = pd.DataFrame()
+    for case_folder_name, case_name in zip(case_list,case_names):
+        
+        # Load this case
+        folder_name = os.path.join(case_folder,case_folder_name,sub_folder)
+        df_inner = read_sowfa_df(folder_name)
+
+        # Assign the case name
+        df_inner['case'] = case_name
+
+        # Append the larger df
+        df = df.append(df_inner)
+
+    # Zero the time
+    df['time'] = df.time - df.time.min()
+
+    return df
 
 
 
