@@ -178,62 +178,62 @@ def sowfaCutFrame(df,zVal,D,xCent=0.,yCent=0.,resolution=100,plot=False):
 
     return ct
 
-# FLORIS imports
-import sys
-sys.path.append('FLORISSE/')
-import main
-import utilities
-import wakeModels
-import OptModules
-import NREL5MW
+# # FLORIS imports
+# import sys
+# sys.path.append('FLORISSE/')
+# import main
+# import utilities
+# import wakeModels
+# import OptModules
+# import NREL5MW
 
 
-def florisCutFrame(inputData,zVal,D,xCent=0.,yCent=0.,resolution=100,plot=False):
+# def florisCutFrame(inputData,zVal,D,xCent=0.,yCent=0.,resolution=100,plot=False):
     
-    # #print(inputData['yLen'][1],resolution)
+#     # #print(inputData['yLen'][1],resolution)
     
-    # xLin = np.linspace(inputData['xLen'][0],inputData['xLen'][1],resolution)
-    # yLin = np.linspace(inputData['yLen'][0]+1.,inputData['yLen'][1],resolution)
+#     # xLin = np.linspace(inputData['xLen'][0],inputData['xLen'][1],resolution)
+#     # yLin = np.linspace(inputData['yLen'][0]+1.,inputData['yLen'][1],resolution)
     
-    # x, y = np.meshgrid(xLin,yLin)
+#     # x, y = np.meshgrid(xLin,yLin)
     
-    # xPts = x.flatten()
-    # yPts = y.flatten()
-    # zPts = np.ones_like(yPts) * zVal
+#     # xPts = x.flatten()
+#     # yPts = y.flatten()
+#     # zPts = np.ones_like(yPts) * zVal
     
-    # # Get points
-    # inputData['xPts'] = xPts
-    # inputData['yPts'] = yPts
-    # inputData['zPts'] = zPts
-    # inputData['points'] = True    # must set this to true if you want points 
+#     # # Get points
+#     # inputData['xPts'] = xPts
+#     # inputData['yPts'] = yPts
+#     # inputData['zPts'] = zPts
+#     # inputData['points'] = True    # must set this to true if you want points 
 
 
-    # Redo with faster code
-    inputData['nSamplesX'] = resolution
-    inputData['nSamplesY'] = resolution
-    inputData['points'] = False
-    inputData['visualizeHorizontal'] = True
+#     # Redo with faster code
+#     inputData['nSamplesX'] = resolution
+#     inputData['nSamplesY'] = resolution
+#     inputData['points'] = False
+#     inputData['visualizeHorizontal'] = True
 
     
     
-    # Get the last turbine out of the way
-    baseX = inputData['turbineX'][0]
-    baseY = inputData['turbineY'][0]
-    inputData['turbineX'][-1] = inputData['xLen'][1] - 1.
-    inputData['turbineY'][-1] = baseY
-    outputData = main.windPlant(inputData)
+#     # Get the last turbine out of the way
+#     baseX = inputData['turbineX'][0]
+#     baseY = inputData['turbineY'][0]
+#     inputData['turbineX'][-1] = inputData['xLen'][1] - 1.
+#     inputData['turbineY'][-1] = baseY
+#     outputData = main.windPlant(inputData)
 
-    #print(outputData['Ufield'])
+#     #print(outputData['Ufield'])
     
-    # Build a scan frame
-    xLin = np.linspace(inputData['xLen'][0],inputData['xLen'][1],resolution)
-    yLin = np.linspace(inputData['yLen'][0],inputData['yLen'][1],resolution)
-    x, y = np.meshgrid(xLin,yLin)
-    xPts = x.flatten()
-    yPts = y.flatten()
+#     # Build a scan frame
+#     xLin = np.linspace(inputData['xLen'][0],inputData['xLen'][1],resolution)
+#     yLin = np.linspace(inputData['yLen'][0],inputData['yLen'][1],resolution)
+#     x, y = np.meshgrid(xLin,yLin)
+#     xPts = x.flatten()
+#     yPts = y.flatten()
     
-    ufield = outputData['Ufield'].flatten()
-    # print(xPts.shape,ufield.shape)
-    ct = horCut(xPts,yPts,ufield,D,xCent=xCent,yCent=yCent,resolution=resolution)
-    inputData['visualizeHorizontal'] = False
-    return ct
+#     ufield = outputData['Ufield'].flatten()
+#     # print(xPts.shape,ufield.shape)
+#     ct = horCut(xPts,yPts,ufield,D,xCent=xCent,yCent=yCent,resolution=resolution)
+#     inputData['visualizeHorizontal'] = False
+#     return ct
