@@ -11,10 +11,10 @@ import os
 #         self.nOutputs = len(self.data[0].keys())
 #         self.outputNames = self.data[0].keys()
 
-# def readAL_Outputs(folderName,channels=[]):
+# def readAL_Outputs(folder_name,channels=[]):
 #     """imports data from AL files (not sectional) and then forces the data into an SCO type structure for conveneince
 
-#     input: foldername, where to find the outputs of AL
+#     input: folder_name, where to find the outputs of AL
 #             genEff and gbEff are efficiencies of gearbox and generator to compute generator power (0-1)
 
 #     output:
@@ -34,7 +34,7 @@ import os
 
 #     # For now, force the fileListf (force powerRotor first) (note order is important)
 #     # outputNames = ['powerRotor','thrust','pitch','rotSpeed','torqueRotor','torqueGen']
-#     outputNames = [f for f in os.listdir(folderName) if os.path.isfile(os.path.join(folderName, f))]
+#     outputNames = [f for f in os.listdir(folder_name) if os.path.isfile(os.path.join(folder_name, f))]
     
     
 #     # Remove the harder input files for now (undo someday)
@@ -49,7 +49,7 @@ import os
 #     	outputNames = channels	
 
     
-#     filenames = [os.path.join(folderName,o) for o in outputNames]
+#     filenames = [os.path.join(folder_name,o) for o in outputNames]
     
 #     #print filenames
 #     # Read in the first first file to learn key parameters
@@ -107,7 +107,7 @@ import os
 #     # #nOutputs = len(outputNames)
 
 #     # # For generator power, if the file exists, use it, otherwise, compute it
-#     # fileName = os.path.join(folderName,'powerGenerator')
+#     # fileName = os.path.join(folder_name,'powerGenerator')
 #     # if os.path.isfile(fileName):
 #     #     print '...Reading %s' % 'powerGenerator'
 #     #     file = open(fileName, 'r')
@@ -142,10 +142,10 @@ import os
 #     return SCO
 
 
-# def readAL_Outputs_PD(folderName, perTime=100., channels=[]):
+# def readAL_Outputs_PD(folder_name, perTime=100., channels=[]):
 #     """wrapper function to return AL tables as pandas tables for convenience with other scripts
 
-#     input: foldername, where to find the outputs of AL
+#     input: folder_name, where to find the outputs of AL
 
 #             perTime creates a helper period column for grouping, the length is in 100s, also, will ensure that final output is multiple of this period
 #               unless perTime is NULL (to be implemented)
@@ -158,7 +158,7 @@ import os
 #     Pieter Gebraad, 2015"""
 
 #     # First get the SCO from above function
-#     SCO = readAL_Outputs(folderName,channels=channels)
+#     SCO = readAL_Outputs(folder_name,channels=channels)
 
 #     Ts = SCO.time[1] - SCO.time[0]
 #     #print Ts
@@ -226,10 +226,10 @@ import os
 #     return dfAl, SCO.nTurbines
 
 
-def read_sowfa_df(folderName, channels=[]):
+def read_sowfa_df(folder_name, channels=[]):
     """New function to use pandas to read in files using pandas
 
-    input: foldername, where to find the outputs of AL
+    input: folder_name, where to find the outputs of AL
             channels, not really used for now, but could be a list of desired channels to only read
     output:
 		df: a pandas table
@@ -239,7 +239,7 @@ def read_sowfa_df(folderName, channels=[]):
     Pieter Gebraad, 2015"""
 
     # Get the availble outputs
-    outputNames = [f for f in os.listdir(folderName) if os.path.isfile(os.path.join(folderName, f))]
+    outputNames = [f for f in os.listdir(folder_name) if os.path.isfile(os.path.join(folder_name, f))]
     
     
     # Remove the harder input files for now (undo someday)
@@ -258,7 +258,7 @@ def read_sowfa_df(folderName, channels=[]):
     # print(num_channels)
 
     if num_channels == 0:
-        raise ValueError('Is %s a data folder?' % folderName)
+        raise ValueError('Is %s a data folder?' % folder_name)
 
 
 
@@ -267,7 +267,7 @@ def read_sowfa_df(folderName, channels=[]):
     for c_idx, chan in enumerate(outputNames):
         
         # print("Load %s" % chan)
-        filename = os.path.join(folderName,chan)
+        filename = os.path.join(folder_name,chan)
 
         # Load the file
         df_inner = pd.read_csv(filename,sep=' ',header=None,skiprows=1)
@@ -287,7 +287,13 @@ def read_sowfa_df(folderName, channels=[]):
         else:
             df[chan] = df_inner[chan]
 
-    return df.reset_index()
+    # Reset the index
+    df = df.reset_index()
+
+    # Zero the time
+    df['time'] = df.time - df.time.min()
+
+    return df
 
 def load_cases(case_list,case_folder='.',case_names=[],sub_folder='turbineOutput/20000'):
     """Load a list of cases and return a single data frame
@@ -330,6 +336,111 @@ def load_cases(case_list,case_folder='.',case_names=[],sub_folder='turbineOutput
 
     return df
 
+def read_flow_array(filename):
+    """Read flow array output from 
+
+
+    input: filename: name of folw to open
+
+    output:
+		df: a pandas table with the columns, x,y,z,u,v,w of all relavent flow info
+        origin: the origin of the flow field, for reconstructing turbine coords
+
+    Paul Fleming, 2018 """
+
+    
+    # Read the dimension info from the file
+    with open(filename,'r') as f:
+        for i in range(10):
+            read_data = f.readline()
+            if 'SPACING' in read_data:
+                spacing = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
+            if 'DIMENSIONS' in read_data:
+                dimensions = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
+            if 'ORIGIN' in read_data:
+                origin = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
+
+    # Set up x, y, z as lists
+    xRange = np.arange(0,dimensions[0]*spacing[0],spacing[0])
+    yRange = np.arange(0,dimensions[1]*spacing[1],spacing[1])
+    zRange = np.arange(0,dimensions[2]*spacing[2],spacing[2])
+
+    pts = np.array([ (x,y,z) for z in zRange for y in yRange for x in xRange ])
+
+    df = pd.read_csv(filename,skiprows=10,sep='\t',header=None,names=['u','v','w'])
+    df['x'] = pts[:,0]
+    df['y'] = pts[:,1]
+    df['z'] = pts[:,2]
+    
+    return df, spacing, dimensions, origin
+
+def get_turbine_coord(case_folder):
+    import re
+    """Read the turbine coordinates from the turbineArrayProperties file 
+
+
+    input: case_folder: name of case folder
+
+    output: turbine_loc: coordinates of turbine (in original simulation, may want to adjust for flow coords above)
+
+    Paul Fleming, 2018 """
+
+    turbine_array_file = os.path.join(case_folder,'constant','turbineArrayProperties')
+    
+    x = list()
+    y = list()
+
+
+    with open(turbine_array_file,'r') as f:
+        for line in f:
+            if 'baseLocation' in line:
+                # Extract the coordinates
+                data = re.findall(r"[-+]?\d*\.\d+|\d+", line)
+                
+                # Append the data
+                x.append(float(data[0]))
+                y.append(float(data[1]))
+
+    turbine_loc = pd.DataFrame({'x':x,'y':y})
+    turbine_loc.index.name = 'Turbine'
+
+    return turbine_loc
+
+
+def get_flow_file(case_folder):
+    """Given a case folder, find the flow file
+
+
+    input: case_folder: name of case folder
+
+    output:
+		flow_file: full path name of flow file"""
+
+    array_folder = os.path.join(case_folder,'array.mean')
+    time_folder = os.path.join(array_folder,os.listdir(array_folder)[0])
+    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
+    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
+
+    return flow_file
+
+def get_output_folder(case_folder):
+    """Given a case folder, find the flow file
+
+
+    input: case_folder: name of case folder
+
+    output:
+		flow_file: full path to output folder"""
+    
+    for s in os.listdir(case_folder):
+        if s.isnumeric():
+            start_time = s
+            print('Start time = %s' % start_time )
+
+    output_folder = os.path.join(case_folder,'turbineOutput',start_time)
+
+    return output_folder
+
 
 
 if __name__ == '__main__':
@@ -339,18 +450,18 @@ if __name__ == '__main__':
     import time
 
     # Demo folder
-    folderName = 'turbineOutput/20000'
+    folder_name = 'turbineOutput/20000'
 
     # Test original functions
     start = time.time()
-    SCO, _ = readAL_Outputs_PD(folderName)
+    SCO, _ = readAL_Outputs_PD(folder_name)
     print(SCO.head())
     end = time.time()
     print('Original code loads in time', end-start)
 
     # Test original functions
     start = time.time()
-    SCO = read_sowfa_df(folderName)
+    SCO = read_sowfa_df(folder_name)
     print(SCO.head())
     end = time.time()
     print('New code loads in time', end-start)
