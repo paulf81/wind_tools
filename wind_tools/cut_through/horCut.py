@@ -178,62 +178,41 @@ def sowfaCutFrame(df,zVal,D,xCent=0.,yCent=0.,resolution=100,plot=False):
 
     return ct
 
-# # FLORIS imports
-# import sys
-# sys.path.append('FLORISSE/')
-# import main
-# import utilities
-# import wakeModels
-# import OptModules
-# import NREL5MW
+# FLORIS imports
+# Currently none
+from scipy.interpolate import Rbf
 
 
-# def florisCutFrame(inputData,zVal,D,xCent=0.,yCent=0.,resolution=100,plot=False):
+def florisCutFrame(floris,zVal,D,xCent=0.,yCent=0.,resolution=100,plot=False):
     
-#     # #print(inputData['yLen'][1],resolution)
-    
-#     # xLin = np.linspace(inputData['xLen'][0],inputData['xLen'][1],resolution)
-#     # yLin = np.linspace(inputData['yLen'][0]+1.,inputData['yLen'][1],resolution)
-    
-#     # x, y = np.meshgrid(xLin,yLin)
-    
-#     # xPts = x.flatten()
-#     # yPts = y.flatten()
-#     # zPts = np.ones_like(yPts) * zVal
-    
-#     # # Get points
-#     # inputData['xPts'] = xPts
-#     # inputData['yPts'] = yPts
-#     # inputData['zPts'] = zPts
-#     # inputData['points'] = True    # must set this to true if you want points 
+    x = floris.farm.flow_field.x
+    y = floris.farm.flow_field.y
+    z = floris.farm.flow_field.z
+    u = floris.farm.flow_field.u_field
 
+    grid_resolution = floris.farm.flow_field.grid_resolution
 
-#     # Redo with faster code
-#     inputData['nSamplesX'] = resolution
-#     inputData['nSamplesY'] = resolution
-#     inputData['points'] = False
-#     inputData['visualizeHorizontal'] = True
+    dz = (np.max(z) - np.min(z)) / grid_resolution.z
 
-    
-    
-#     # Get the last turbine out of the way
-#     baseX = inputData['turbineX'][0]
-#     baseY = inputData['turbineY'][0]
-#     inputData['turbineX'][-1] = inputData['xLen'][1] - 1.
-#     inputData['turbineY'][-1] = baseY
-#     outputData = main.windPlant(inputData)
+    # Mask the grid
+    mask = (z < zVal + dz ) & (z > zVal - dz)
 
-#     #print(outputData['Ufield'])
+    u_grid = u[mask]
+    x_grid = x[mask]
+    y_grid = y[mask]
+    z_grid = z[mask]
+
+    rbfi = Rbf(x_grid, y_grid, z_grid, u_grid)
+
+    # Build a scan frame
+    xLin = np.linspace(floris.farm.flow_field.floris.farm.flow_field.xmax,resolution)
+    yLin = np.linspace(floris.farm.flow_field.ymin,floris.farm.flow_field.ymax,resolution)
+    x, y = np.meshgrid(xLin,yLin)
+    xPts = x.flatten()
+    yPts = y.flatten()
     
-#     # Build a scan frame
-#     xLin = np.linspace(inputData['xLen'][0],inputData['xLen'][1],resolution)
-#     yLin = np.linspace(inputData['yLen'][0],inputData['yLen'][1],resolution)
-#     x, y = np.meshgrid(xLin,yLin)
-#     xPts = x.flatten()
-#     yPts = y.flatten()
-    
-#     ufield = outputData['Ufield'].flatten()
-#     # print(xPts.shape,ufield.shape)
-#     ct = horCut(xPts,yPts,ufield,D,xCent=xCent,yCent=yCent,resolution=resolution)
-#     inputData['visualizeHorizontal'] = False
-#     return ct
+    ufield  = rbfi(xPts, yPts, zVal * np.ones_like(xPts))
+    # print(xPts.shape,ufield.shape)
+    ct = horCut(xPts,yPts,ufield,D,xCent=xCent,yCent=yCent,resolution=resolution)
+
+    return ct
