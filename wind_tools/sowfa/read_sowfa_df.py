@@ -336,43 +336,7 @@ def load_cases(case_list,case_folder='.',case_names=[],sub_folder='turbineOutput
 
     return df
 
-def read_flow_array(filename):
-    """Read flow array output from 
 
-
-    input: filename: name of folw to open
-
-    output:
-		df: a pandas table with the columns, x,y,z,u,v,w of all relavent flow info
-        origin: the origin of the flow field, for reconstructing turbine coords
-
-    Paul Fleming, 2018 """
-
-    
-    # Read the dimension info from the file
-    with open(filename,'r') as f:
-        for i in range(10):
-            read_data = f.readline()
-            if 'SPACING' in read_data:
-                spacing = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
-            if 'DIMENSIONS' in read_data:
-                dimensions = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
-            if 'ORIGIN' in read_data:
-                origin = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
-
-    # Set up x, y, z as lists
-    xRange = np.arange(0,dimensions[0]*spacing[0],spacing[0])
-    yRange = np.arange(0,dimensions[1]*spacing[1],spacing[1])
-    zRange = np.arange(0,dimensions[2]*spacing[2],spacing[2])
-
-    pts = np.array([ (x,y,z) for z in zRange for y in yRange for x in xRange ])
-
-    df = pd.read_csv(filename,skiprows=10,sep='\t',header=None,names=['u','v','w'])
-    df['x'] = pts[:,0]
-    df['y'] = pts[:,1]
-    df['z'] = pts[:,2]
-    
-    return df, spacing, dimensions, origin
 
 def get_turbine_coord(case_folder):
     import re
@@ -406,22 +370,32 @@ def get_turbine_coord(case_folder):
 
     return turbine_loc
 
+def read_sc_input(case_folder,filename='SC_INPUT.txt',wind_direction=270.):
 
-def get_flow_file(case_folder):
-    """Given a case folder, find the flow file
+    """Read the SC input file to get the wind farm control settings
 
 
     input: case_folder: name of case folder
+            filename: name of the SC file
+            wind_direction: wind direction to subtract from to get relative yaw error
 
-    output:
-		flow_file: full path name of flow file"""
+    output: df_SC: Data frame of SC settings
 
-    array_folder = os.path.join(case_folder,'array.mean')
-    time_folder = os.path.join(array_folder,os.listdir(array_folder)[0])
-    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
-    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
+    Paul Fleming, 2018 """
 
-    return flow_file
+    sc_file = os.path.join(case_folder,filename)
+    
+    df_SC = pd.read_csv(sc_file,delim_whitespace=True)
+
+    df_SC.columns = ['time','turbine','yaw','pitch']
+
+    df_SC['yaw'] = wind_direction - df_SC.yaw
+
+    df_SC = df_SC.set_index('turbine')
+
+    return df_SC
+
+
 
 def get_output_folder(case_folder):
     """Given a case folder, find the flow file
