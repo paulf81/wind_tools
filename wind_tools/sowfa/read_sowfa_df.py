@@ -417,50 +417,26 @@ def get_output_folder(case_folder):
 
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    import matplotlib.pyplot as plt
-    import matplotlib.ticker as ticker
-    import time
+#     import matplotlib.pyplot as plt
+#     import matplotlib.ticker as ticker
+#     import time
 
-    # Demo folder
-    folder_name = 'turbineOutput/20000'
+#     # Demo folder
+#     folder_name = 'turbineOutput/20000'
 
-    # Test original functions
-    start = time.time()
-    SCO, _ = readAL_Outputs_PD(folder_name)
-    print(SCO.head())
-    end = time.time()
-    print('Original code loads in time', end-start)
+#     # Test original functions
+#     start = time.time()
+#     SCO, _ = readAL_Outputs_PD(folder_name)
+#     print(SCO.head())
+#     end = time.time()
+#     print('Original code loads in time', end-start)
 
-    # Test original functions
-    start = time.time()
-    SCO = read_sowfa_df(folder_name)
-    print(SCO.head())
-    end = time.time()
-    print('New code loads in time', end-start)
-
-    # print(SCO.head())
-
-    # readAL_Outputs_PD
-
-    # signalsToPlot = ['powerRotor','thrust','pitch','rotSpeed','torqueRotor']
-
-    # fig, axes = plt.subplots(len(signalsToPlot),1)
-
-    # formatter = ticker.ScalarFormatter()
-    # formatter.set_powerlimits((-3, 3))
-
-    # for signalI in range(0, len(signalsToPlot)):
-    #     signal = signalsToPlot[signalI]
-    #     for turbineI in range(0,SCO.nTurbines):
-    #         axes[signalI].plot(SCO.time, SCO.data[turbineI][signal],label=turbineI)
-    #         axes[signalI].set_xlabel('time (s)')
-    #         axes[signalI].set_ylabel(signal)
-
-    # for turbineI in range(0, SCO.nTurbines):
-    #     axes[0].yaxis.set_major_formatter(formatter)
-
-    # plt.legend()
-    # plt.show()
+#     # Test original functions
+#     start = time.time()
+#     SCO = read_sowfa_df(folder_name)
+#     print(SCO.head())
+#     end = time.time()
+#     print('New code loads in time', end-start)
 
