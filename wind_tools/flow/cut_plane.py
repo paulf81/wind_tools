@@ -198,4 +198,14 @@ class CrossPlane(_CutPlane):
     def get_profile(self,resolution=10):
         x1_locs = np.linspace(min(self.x1_flat), max(self.x1_flat), resolution)
         v_array = np.array([self.calculate_wind_speed(x1_loc,self.x2_center,self.D/2.) for x1_loc in x1_locs])
-        return (x1_locs,v_array)
+        return ((x1_locs - self.x1_center)/self.D,v_array)
+
+
+def plot_turbine(ax, x, y, yaw, D):
+
+    R = D/2.
+    x_0 = x + np.sin(np.deg2rad(yaw)) * R
+    x_1 = x - np.sin(np.deg2rad(yaw)) * R
+    y_0 = x - np.cos(np.deg2rad(yaw)) * R
+    y_1 = x + np.cos(np.deg2rad(yaw)) * R
+    ax.plot([x_0,x_1],[y_0,y_1],color='k')
