@@ -206,6 +206,6 @@ def plot_turbine(ax, x, y, yaw, D):
     R = D/2.
     x_0 = x + np.sin(np.deg2rad(yaw)) * R
     x_1 = x - np.sin(np.deg2rad(yaw)) * R
-    y_0 = x - np.cos(np.deg2rad(yaw)) * R
-    y_1 = x + np.cos(np.deg2rad(yaw)) * R
+    y_0 = y - np.cos(np.deg2rad(yaw)) * R
+    y_1 = y + np.cos(np.deg2rad(yaw)) * R
     ax.plot([x_0,x_1],[y_0,y_1],color='k')
