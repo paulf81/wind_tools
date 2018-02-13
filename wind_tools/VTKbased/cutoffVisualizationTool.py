@@ -172,5 +172,3 @@ def instantiateVTKviewer(fileLoc):
 def CheckAbort(obj, event):
     if obj.GetEventPending() != 0:
         obj.SetAbortRender(1)
-
-#cutoffInterface('C:/Users/roald/Dropbox/cases_for_roald/sowfaCases/CT_test_U8_pitch_00_tilt_+10/array.mean/20600.4/array.mean0D_UAvg.vtk')
