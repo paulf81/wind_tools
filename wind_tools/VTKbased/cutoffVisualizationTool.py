@@ -5,32 +5,27 @@ import vtk
 from PyQt5.QtWidgets import QWidget, QSlider, QLabel, QVBoxLayout
 from PyQt5.QtCore import Qt
 import numpy as np
+from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 
 
 class cutoffInterface(QWidget):
     def __init__(self, fileLoc):
         super().__init__()
-
         self.OpacB = 3
         self.OpacV = .1
 
         # Start the VTK viewer and the user interface
-        self.renderWindow, self.oTF, self.scalar_range, self.scalar_bar = instantiateVTKviewer(fileLoc)
+        self.ren, self.oTF, self.scalar_range, self.scalar_bar = instantiateVTKviewer(fileLoc)
+
         self.initUI()
+        self.rW = self.vtkWidget.GetRenderWindow()
+        self.iren = self.rW.GetInteractor()
+        self.rW.AddRenderer(self.ren)
 
-        # Make the vtk application interactive as well
-        iren = vtk.vtkRenderWindowInteractor()
-        iren.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
-        iren.SetRenderWindow(self.renderWindow)
-
-        # create the scalar_bar_widget
-        scalar_bar_widget = vtk.vtkScalarBarWidget()
-        scalar_bar_widget.SetInteractor(iren)
-        scalar_bar_widget.SetScalarBarActor(self.scalar_bar)
-        scalar_bar_widget.On()
-
-        iren.Initialize()
-        iren.Start()
+        # Change the VTK element interaction style and show the GUI
+        self.iren.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+        self.iren.Initialize()
+        self.show()
 
     def initUI(self):
         layout = QVBoxLayout()
@@ -55,9 +50,11 @@ class cutoffInterface(QWidget):
         sldTransparancy.valueChanged[int].connect(self.changeOpacity)
         layout.addWidget(sldTransparancy)
 
-        self.setGeometry(300, 300, 250, 200)
+        self.vtkWidget = QVTKRenderWindowInteractor()
+        layout.addWidget(self.vtkWidget)
+
+        self.setGeometry(300, 100, 1000, 800)
         self.setWindowTitle('Slicer Interface')
-        self.show()
 
     def changeOpacityBoundary(self, value):
         self.OpacB = (self.scalar_range[0] +
@@ -76,24 +73,16 @@ class cutoffInterface(QWidget):
         self.oTF.AddPoint(self.OpacB-.01, self.OpacV)
         self.oTF.AddPoint(self.OpacB+.01, 0)
         self.oTF.AddPoint(self.scalar_range[1], 0)
-        self.renderWindow.Render()
+        self.rW.Render()
 
 
 def instantiateVTKviewer(fileLoc):
-    # Create the standard renderer, render window and interactor
-    ren = vtk.vtkRenderer()
-    renWin = vtk.vtkRenderWindow()
-    renWin.AddRenderer(ren)
-    iren = vtk.vtkRenderWindowInteractor()
-    iren.SetRenderWindow(renWin)
-
     # Create the reader for the data
     reader = vtk.vtkXMLImageDataReader()
     reader.SetFileName(fileLoc)
     reader.Update()
     flowField = reader.GetOutput()
     scalar_range = flowField.GetScalarRange()
-#    scalar_range = (2.0, scalar_range[1])
 
     # Create a custom lut, it's used both as a mapper and at the scalar_bar
     lut = vtk.vtkLookupTable()
@@ -102,7 +91,6 @@ def instantiateVTKviewer(fileLoc):
 
     # create the scalar_bar
     scalar_bar = vtk.vtkScalarBarActor()
-    scalar_bar.SetOrientationToHorizontal()
     scalar_bar.SetLookupTable(lut)
     scalar_bar.SetNumberOfLabels(6)
     scalar_bar.GetLabelTextProperty().SetFontFamilyToCourier()
@@ -156,19 +144,9 @@ def instantiateVTKviewer(fileLoc):
 
     renderer = vtk.vtkRenderer()
     renderer.AddVolume(volume)
-    renderer.SetBackground(1, 1, 1)
+    renderer.AddActor(scalar_bar)
+    renderer.SetBackground(240/255, 240/255, 240/255)
     renderer.SetActiveCamera(camera)
     renderer.ResetCamera()
 
-    # Set renderingwindow and render for the first time
-    renderWindow = vtk.vtkRenderWindow()
-    renderWindow.AddRenderer(renderer)
-    renderWindow.Render()
-    renderWindow.AddObserver('AbortCheckEvent', CheckAbort)
-
-    return renderWindow, opacityTransferFunction, scalar_range, scalar_bar
-
-
-def CheckAbort(obj, event):
-    if obj.GetEventPending() != 0:
-        obj.SetAbortRender(1)
+    return renderer, opacityTransferFunction, scalar_range, scalar_bar

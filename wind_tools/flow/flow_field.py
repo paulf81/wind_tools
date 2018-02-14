@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 
-def get_flow_file(case_folder):
+def get_flow_file(case_folder, fileType = ".vtk"):
     """Given a case folder, find the flow file
 
 
@@ -28,8 +28,8 @@ def get_flow_file(case_folder):
 
     array_folder = os.path.join(case_folder,'array.mean')
     time_folder = os.path.join(array_folder,os.listdir(array_folder)[0])
-    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
-    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
+    fileNames = [fi for fi in os.listdir(time_folder) if fi.endswith(fileType)]
+    flow_file =   os.path.join(time_folder,fileNames[0])
 
     return flow_file
 
@@ -56,11 +56,11 @@ def read_flow_frame_SOWFA(filename):
             if 'SPACING' in read_data:
                 spacing = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
             if 'DIMENSIONS' in read_data:
-                dimensions = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
+                dims = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
+                dimensions = tuple(int(x) for x in dims)
             if 'ORIGIN' in read_data:
                 origin = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
 
-    dimensions = tuple(int(x) for x in dimensions)
     # Set up x, y, z as lists
     xRange = np.arange(0,dimensions[0]*spacing[0],spacing[0])
     yRange = np.arange(0,dimensions[1]*spacing[1],spacing[1])

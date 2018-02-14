@@ -4,6 +4,7 @@
 import vtk
 from PyQt5.QtWidgets import QWidget, QSlider, QRadioButton, QGridLayout
 from PyQt5.QtCore import Qt
+from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 
 
 class slicerInterface(QWidget):
@@ -11,31 +12,26 @@ class slicerInterface(QWidget):
         super().__init__()
 
         # Start the VTK viewer and the user interface
-        (self.rW, self.renderer, self.scalar_bar, self.dims, self.cellSizes,
-         self.reader, self.lut, self.scalar_range) = instantiateVTKviewer2(fileLoc)
+        (self.ren, self.scalar_bar, self.dims, self.cellSizes, self.reader,
+         self.lut, self.scalar_range) = instantiateVTKviewer2(fileLoc)
+
         self.initUI()
+        self.rW = self.vtkWidget.GetRenderWindow()
+        self.iren = self.rW.GetInteractor()
+        self.rW.AddRenderer(self.ren)
 
         # Instantiate the dynamical slice that will be changed on user input
         self.dynActor = makePlaneAt((1, 0, 0), (0, 0, 0),
                                     self.reader, self.lut, self.scalar_range)
-        self.renderer.AddActor(self.dynActor)
+        self.ren.AddActor(self.dynActor)
         self.rButtonMap = {'X': 0, 'Y': 1, 'Z': 2}
         self.sliceVal = 0
         self.ax = 0
 
-        # Make the vtk application interactive as well
-        iren = vtk.vtkRenderWindowInteractor()
-        iren.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
-        iren.SetRenderWindow(self.rW)
-
-        # create the scalar_bar_widget
-        scalar_bar_widget = vtk.vtkScalarBarWidget()
-        scalar_bar_widget.SetInteractor(iren)
-        scalar_bar_widget.SetScalarBarActor(self.scalar_bar)
-        scalar_bar_widget.On()
-
-        iren.Initialize()
-        iren.Start()
+        # Change the VTK element interaction style and show the GUI
+        self.iren.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+        self.iren.Initialize()
+        self.show()
 
     def initUI(self):
         Grid = QGridLayout()
@@ -60,9 +56,11 @@ class slicerInterface(QWidget):
         sld.valueChanged[int].connect(self.changeSliderValue)
         Grid.addWidget(sld, 1, 0, 1, 3)
 
-        self.setGeometry(300, 300, 250, 150)
+        self.vtkWidget = QVTKRenderWindowInteractor()
+        Grid.addWidget(self.vtkWidget, 2, 0, 1, 3)
+
+        self.setGeometry(300, 100, 1000, 800)
         self.setWindowTitle('Slicer Interface')
-        self.show()
 
     def changeSliderValue(self, value):
         self.sliceVal = value/100
@@ -73,14 +71,14 @@ class slicerInterface(QWidget):
         self.changeSlice()
 
     def changeSlice(self):
-        self.renderer.RemoveActor(self.dynActor)
-        d = [0, 0, 0]
-        d[self.ax] = 1
-        l = [0, 0, 0]
-        l[self.ax] = self.dims[self.ax]*self.cellSizes[self.ax]*self.sliceVal
-        self.dynActor = makePlaneAt(d, l, self.reader,
+        self.ren.RemoveActor(self.dynActor)
+        Nor = [0, 0, 0]
+        Nor[self.ax] = 1
+        Ori = [0, 0, 0]
+        Ori[self.ax] = self.dims[self.ax]*self.cellSizes[self.ax]*self.sliceVal
+        self.dynActor = makePlaneAt(Nor, Ori, self.reader,
                                     self.lut, self.scalar_range)
-        self.renderer.AddActor(self.dynActor)
+        self.ren.AddActor(self.dynActor)
         self.rW.Render()
 
 
@@ -92,8 +90,8 @@ def instantiateVTKviewer2(fileLoc):
     flowField = reader.GetOutput()
     scalar_range = flowField.GetScalarRange()
 
-    # Create a custom lut. The lut is used both at the mapper and at the
-    # scalar_bar
+    # Create a custom LookUpTable.
+    # The lut is used both at the mapper and at the scalar_bar
     lut = vtk.vtkLookupTable()
     lut.SetTableRange(scalar_range)
     lut.Build()
@@ -103,7 +101,6 @@ def instantiateVTKviewer2(fileLoc):
 
     # create the scalar_bar
     scalar_bar = vtk.vtkScalarBarActor()
-    scalar_bar.SetOrientationToHorizontal()
     scalar_bar.SetLookupTable(lut)
     scalar_bar.SetNumberOfLabels(8)
     scalar_bar.GetLabelTextProperty().SetFontFamilyToCourier()
@@ -115,11 +112,14 @@ def instantiateVTKviewer2(fileLoc):
     scalar_bar.GetLabelTextProperty().SetColor(0, 0, 0)
 
     # Create the three planes at the back sides of the volume
-    cutActor1 = makePlaneAt((1, 0, 0), (dims[0]*cellSizes[0]*.99, 0, 0),
+    origin = flowField.GetOrigin()
+    box = [o + d*s for o, d, s in zip(origin, dims, cellSizes)]
+
+    cutActor1 = makePlaneAt((1, 0, 0), (box[0]*.99, 0, 0),
                             reader, lut, scalar_range)
-    cutActor2 = makePlaneAt((0, 1, 0), (0, dims[1]*cellSizes[1]*.99, 0),
+    cutActor2 = makePlaneAt((0, 1, 0), (0, box[1]*.99, 0),
                             reader, lut, scalar_range)
-    cutActor3 = makePlaneAt((0, 0, 1), (0, 0, dims[2]*cellSizes[2]*.01),
+    cutActor3 = makePlaneAt((0, 0, 1), (0, 0, box[2]*.01),
                             reader, lut, scalar_range)
 
     # Setup camera
@@ -144,25 +144,21 @@ def instantiateVTKviewer2(fileLoc):
     renderer.AddActor(cutActor1)
     renderer.AddActor(cutActor2)
     renderer.AddActor(cutActor3)
-    renderer.SetBackground(1, 1, 1)
+    renderer.AddActor(scalar_bar)
+    renderer.SetBackground(240/255, 240/255, 240/255)
     renderer.SetActiveCamera(camera)
     renderer.ResetCamera()
     renderer.AddLight(light1)
     renderer.AddLight(light2)
     renderer.AddLight(light3)
 
-    # Set renderingwindow and render for the first time
-    renderWindow = vtk.vtkRenderWindow()
-    renderWindow.AddRenderer(renderer)
-    renderWindow.Render()
-    return (renderWindow, renderer, scalar_bar, dims, cellSizes,
-            reader, lut, scalar_range)
+    return (renderer, scalar_bar, dims, cellSizes, reader, lut, scalar_range)
 
 
-def makePlaneAt(d, l, reader, lut, scalar_range):
+def makePlaneAt(Nor, Ori, reader, lut, scalar_range):
     plane = vtk.vtkPlane()
-    plane.SetOrigin(l)
-    plane.SetNormal(d)
+    plane.SetOrigin(Ori)
+    plane.SetNormal(Nor)
 
     planeCut = vtk.vtkCutter()
     planeCut.SetInputConnection(reader.GetOutputPort())
