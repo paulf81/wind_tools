@@ -99,6 +99,7 @@ class _CutPlane():
             self.x1_lin = self.x1_lin * -1
             self.x1_flat = self.x1_flat * -1 
             self.x1_center = self.x1_center * -1 
+            self.v_mesh  =self.v_mesh * -1
 
 
         # Set the diamater which will be used in visualization
@@ -109,6 +110,27 @@ class _CutPlane():
         else:
             self.plot_in_D = True
             self.D = D
+
+    def subtract(self,ctSub):
+        """ Subtract another cut through from self (assume matching resolution) and return the difference
+
+        """
+        ctResult = copy.deepcopy(ctSub)# copy the class
+
+        
+        # Original method
+        # ctResult.u = self.u - ctSub.u
+        # ctResult.uMesh = griddata(np.column_stack([ctResult.y, ctResult.z]),ctResult.u,(ctResult.yMesh.flatten(), ctResult.zMesh.flatten()), method='cubic')
+
+        # New method
+        ctResult.u_mesh = self.u_mesh - ctSub.u_mesh
+        ctResult.v_mesh = self.v_mesh - ctSub.v_mesh
+        ctResult.w_mesh = self.w_mesh - ctSub.w_mesh
+        ctResult.u_cubed = self.u_cubed - ctSub.u_cubed
+
+
+        return ctResult
+
 
     def visualize(self,ax=None,minSpeed=None,maxSpeed=None):
         """ Visualize the scan
@@ -199,6 +221,77 @@ class CrossPlane(_CutPlane):
         x1_locs = np.linspace(min(self.x1_flat), max(self.x1_flat), resolution)
         v_array = np.array([self.calculate_wind_speed(x1_loc,self.x2_center,self.D/2.) for x1_loc in x1_locs])
         return ((x1_locs - self.x1_center)/self.D,v_array)
+
+
+    def paper_plot(self,ax=None,minSpeed=None,maxSpeed=None,levels=[-5,-4,-3,-2,-1]):
+        # Complete a plot in style of more recent paper
+
+        if not ax:
+            fig, ax = plt.subplots()
+
+        # First visualization
+        im = self.visualize(ax=ax,minSpeed=minSpeed,maxSpeed=maxSpeed)
+
+        # Add line contour
+        self.lineContour(ax=ax,levels=levels,colors='w',linewidths=1.2,alpha=0.6)
+
+        # Add reference turbine
+        circle2 = plt.Circle((0, 0), 0.5,lw=2, color='red', fill=False)
+        ax.add_artist(circle2)
+
+        return im
+
+    def quiver(self,ax=None,minSpeed=None,maxSpeed=None,downSamp=1,**kw):
+        """ Visualize the scan
+        
+        Args:
+            ax: axes for plotting, if none, create a new one  
+            minSpeed, maxSpeed, values used for plotting, if not provide assume to data max min
+        """
+        if not ax:
+            fig, ax = plt.subplots()
+
+
+        # # Reshape UMesh internally
+        v_mesh = self.v_mesh.reshape(self.res,self.res)
+        w_mesh = self.w_mesh.reshape(self.res,self.res)
+        # Zm = np.ma.masked_where(np.isnan(uMesh),uMesh)
+
+        # plot the stream plot
+        QV1 = ax.quiver( (self.x1_mesh[::downSamp,::downSamp]-self.x1_center) /self.D,
+                   (self.x2_mesh[::downSamp,::downSamp]-self.x2_center)/self.D,
+                   v_mesh[::downSamp,::downSamp],
+                   w_mesh[::downSamp,::downSamp],**kw)
+
+        ax.quiverkey(QV1, -1.6, 1.2, 1, '1 m/s', coordinates='data')
+        # ax.quiverkey(QV1, -3, 1.2, 1, '1 m/s', coordinates='data')
+
+        #print(minSpeed,maxSpeed)
+        
+        # Make equal axis
+        ax.set_aspect('equal')
+
+
+
+# Define lidar cross plane subclass
+# Primary difference is df_flow is a bit faked to use lidar data
+class LidarCrossPlane(CrossPlane): 
+
+    def __init__(self, y, z, u, y_center, z_center, D, resolution=100, crop_y=None,crop_z=None):
+
+        
+        x = np.zeros_like(y)
+        v = np.zeros_like(y)
+        w = np.zeros_like(y)
+
+        df_flow = pd.DataFrame({'x':x,
+                            'y':y,
+                            'z':z,
+                            'u':u,
+                            'v':v,
+                            'w':w,})
+
+        super().__init__(df_flow, 0., y_center, z_center, D, resolution=resolution, crop_y=crop_y,crop_z=crop_z)
 
 
 def plot_turbine(ax, x, y, yaw, D):
