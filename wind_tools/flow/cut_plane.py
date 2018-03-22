@@ -54,11 +54,24 @@ class _CutPlane():
         # Get a sub-frame of only this 3rd dimension value
         df_sub = df_flow[df_flow[self.x3_name]==nearest_value]
 
-        # If cropping x1 do it now
+        # Make sure cropping is valid
         if crop_x1:
-            df_sub = df_sub[(df_sub[x1] >= crop_x1[0]) & (df_sub[x1] <= crop_x1[1])]
+            if crop_x1[0] < min(df_sub[x1]):
+                raise Exception("Invalid x_1 minimum on cropping")
+            if crop_x1[1] > max(df_sub[x1]):
+                raise Exception("Invalid x_1 maximum on cropping")
+
         if crop_x2:
-            df_sub = df_sub[(df_sub[x2] >= crop_x2[0]) & (df_sub[x2] <= crop_x2[1])]
+            if crop_x2[0] < min(df_sub[x2]):
+                raise Exception("Invalid x_2 minimum on cropping")
+            if crop_x2[1] > max(df_sub[x2]):
+                raise Exception("Invalid x_2 maximum on cropping")
+
+        # If cropping x1 do it now
+        # if crop_x1:
+        #     df_sub = df_sub[(df_sub[x1] >= crop_x1[0]) & (df_sub[x1] <= crop_x1[1])]
+        # if crop_x2:
+        #     df_sub = df_sub[(df_sub[x2] >= crop_x2[0]) & (df_sub[x2] <= crop_x2[1])]
 
         # Store the relevent values
         self.x1_in = df_sub[x1]
@@ -70,11 +83,21 @@ class _CutPlane():
         # Save the desired resolution
         self.res = resolution
 
-        # Grid the data
-        self.x1_lin = np.linspace(min(self.x1_in), max(self.x1_in), resolution)
-        self.x2_lin = np.linspace(min(self.x2_in), max(self.x2_in), resolution)
+        # Grid the data, if cropping available use that
+        if crop_x1:
+            # self.x1_lin = np.linspace(min(self.x1_in), max(self.x1_in), resolution)
+            self.x1_lin = np.linspace(crop_x1[0], crop_x1[1], resolution)
+        else:
+            self.x1_lin = np.linspace(min(self.x1_in), max(self.x1_in), resolution)
+        if crop_x2:
+            # self.x2_lin = np.linspace(min(self.x2_in), max(self.x2_in), resolution)
+            self.x2_lin = np.linspace(crop_x2[0], crop_x2[1], resolution)
+        else:
+            self.x2_lin = np.linspace(min(self.x2_in), max(self.x2_in), resolution)
         
         # Mesh and interpolate u, v and w
+        # print(self.x1_lin)
+        # print(sorted(self.x1_in))
         self.x1_mesh, self.x2_mesh = np.meshgrid(self.x1_lin, self.x2_lin)
         self.u_mesh = griddata(np.column_stack([self.x1_in, self.x2_in]), self.u_in,(self.x1_mesh.flatten(), self.x2_mesh.flatten()), method='cubic')
         self.v_mesh = griddata(np.column_stack([self.x1_in, self.x2_in]), self.v_in,(self.x1_mesh.flatten(), self.x2_mesh.flatten()), method='cubic')
@@ -115,6 +138,11 @@ class _CutPlane():
         """ Subtract another cut through from self (assume matching resolution) and return the difference
 
         """
+
+        # First confirm eligible for subtraction
+        if (not np.array_equal(self.x1_flat,ctSub.x1_flat)) or (not np.array_equal(self.x2_flat,ctSub.x2_flat)):
+            raise Exception("Can't subtract because not meshed the same")
+
         ctResult = copy.deepcopy(ctSub)# copy the class
 
         
@@ -141,9 +169,9 @@ class _CutPlane():
         """
         if not ax:
             fig, ax = plt.subplots()
-        if not minSpeed:
+        if minSpeed is None:
             minSpeed = self.u_mesh.min()
-        if not maxSpeed:
+        if maxSpeed is None:
             maxSpeed = self.u_mesh.max()
 
        
@@ -152,6 +180,8 @@ class _CutPlane():
         Zm = np.ma.masked_where(np.isnan(u_mesh),u_mesh)
         
         # Plot the cut-through
+        # print((self.x1_lin-self.x1_center)  /self.D)
+        # print(minSpeed,maxSpeed)
         im = ax.pcolormesh((self.x1_lin-self.x1_center)  /self.D, (self.x2_lin-self.x2_center) /self.D, Zm, cmap='coolwarm',vmin=minSpeed,vmax=maxSpeed)
 
         # Make equal axis
@@ -204,10 +234,10 @@ class HorPlane(_CutPlane):
 # Define cross plane subclass
 class CrossPlane(_CutPlane): 
 
-    def __init__(self, df_flow, x_value, y_center, z_center, D, resolution=100, crop_y=None,crop_z=None):
+    def __init__(self, df_flow, x_value, y_center, z_center, D, resolution=100, crop_y=None,crop_z=None,invert_x1=True):
 
         # Set up call super
-        super().__init__(df_flow, x1='y', x2='z', x3_value=x_value,resolution=resolution,x1_center=y_center,x2_center=z_center, D=D, invert_x1=True, crop_x1 = crop_y, crop_x2=crop_z)
+        super().__init__(df_flow, x1='y', x2='z', x3_value=x_value,resolution=resolution,x1_center=y_center,x2_center=z_center, D=D, invert_x1=invert_x1, crop_x1 = crop_y, crop_x2=crop_z)
 
     def calculate_wind_speed(self,x1_loc,x2_loc,R):
             
@@ -230,6 +260,7 @@ class CrossPlane(_CutPlane):
             fig, ax = plt.subplots()
 
         # First visualization
+        # print(minSpeed,maxSpeed)
         im = self.visualize(ax=ax,minSpeed=minSpeed,maxSpeed=maxSpeed)
 
         # Add line contour
@@ -263,7 +294,7 @@ class CrossPlane(_CutPlane):
                    v_mesh[::downSamp,::downSamp],
                    w_mesh[::downSamp,::downSamp],**kw)
 
-        ax.quiverkey(QV1, -1.6, 1.2, 1, '1 m/s', coordinates='data')
+        ax.quiverkey(QV1, -.75, -0.4, 1, '1 m/s', coordinates='data')
         # ax.quiverkey(QV1, -3, 1.2, 1, '1 m/s', coordinates='data')
 
         #print(minSpeed,maxSpeed)
