@@ -16,19 +16,20 @@ import numpy as np
 import pandas as pd
 
 
-def get_flow_file(case_folder):
+def get_flow_file(case_folder, fileType = ".vtk"):
     """Given a case folder, find the flow file
 
 
-    input: case_folder: name of case folder
+    input
+        case_folder: name of case folder
 
     output:
-		flow_file: full path name of flow file"""
+        flow_file: full path name of flow file"""
 
     array_folder = os.path.join(case_folder,'array.mean')
     time_folder = os.path.join(array_folder,os.listdir(array_folder)[0])
-    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
-    flow_file =   os.path.join(time_folder,os.listdir(time_folder)[0])
+    fileNames = [fi for fi in os.listdir(time_folder) if fi.endswith(fileType)]
+    flow_file =   os.path.join(time_folder,fileNames[0])
 
     return flow_file
 
@@ -40,7 +41,9 @@ def read_flow_frame_SOWFA(filename):
     input: filename: name of flow array to open
 
     output:
-		df: a pandas table with the columns, x,y,z,u,v,w of all relavent flow info
+        df: a pandas table with the columns, x,y,z,u,v,w of all relevant flow info
+        spacing: The spacing in the x, y and z direction between points
+        dimensions: a tuple or list of integers with the number of points in xyz
         origin: the origin of the flow field, for reconstructing turbine coords
 
     Paul Fleming, 2018 """
@@ -53,7 +56,8 @@ def read_flow_frame_SOWFA(filename):
             if 'SPACING' in read_data:
                 spacing = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
             if 'DIMENSIONS' in read_data:
-                dimensions = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
+                dims = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
+                dimensions = tuple(int(x) for x in dims)
             if 'ORIGIN' in read_data:
                 origin = tuple([float(d) for d in read_data.rstrip().split(' ')[1:]])
 
@@ -75,11 +79,11 @@ def get_flow_frame_FLORIS(floris):
     """Read flow array output from SOWFA
 
 
-    input: floris: a floris model which has already been run to extract flow from
+    input:
+        floris: a floris model which has already been run to extract flow from
 
     output:
-    df: a pandas table with the columns, x,y,z,u,v,w of all relavent flow info
-        origin: the origin of the flow field, for reconstructing turbine coords
+        df: a pandas table with the columns, x,y,z,u,v,w of all relevant flow info
 
     Paul Fleming, 2018 """
 
